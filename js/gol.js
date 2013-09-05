@@ -218,8 +218,8 @@ var gol = function () {
      */
     var initBoard = function (callback) {
         var params = {
-            x: parseInt(window.innerWidth / cell_size),
-            y: parseInt(window.innerHeight / cell_size)
+            x: parseInt(window.innerWidth / cell_size, 10),
+            y: parseInt(window.innerHeight / cell_size, 10)
         }
         generateData('initial', params, function (data) {
             initShape(data.cols, data.rows);

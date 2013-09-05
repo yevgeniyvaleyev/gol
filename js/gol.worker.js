@@ -83,8 +83,8 @@ function newLife(data) {
 function addGodLifeIfExist() {
     for (var prop in new_life) {
         var item = new_life[prop],
-            height_limit = !isNaN(parseInt(map[item.y + 2])),
-            width_limit = !isNaN(parseInt(map[0][item.x + 2]));
+            height_limit = !isNaN(parseInt(map[item.y + 2], 10)),
+            width_limit = !isNaN(parseInt(map[0][item.x + 2], 10));
 
         // Walking life
         // **
