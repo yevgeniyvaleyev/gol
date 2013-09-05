@@ -10,7 +10,6 @@ var neighbourOffset = [
     map = [],
     new_life = {};
 
-
 /**
  * Initial set od data
  * @param data
@@ -28,7 +27,7 @@ function initialData(data) {
         life_map[y] = [];
         for (var x = 0; x < x_limit; x++) {
             var division = Math.floor(Math.random() * 20);
-            number = (x%division == 0) ? Math.floor(Math.random() * 2) : 0;
+            number = (x % division == 0) ? Math.floor(Math.random() * 2) : 0;
             tmp_map[y].push(number);
             if (number) {
                 life_map[y].push({x_position: x, age: 0});
@@ -139,7 +138,6 @@ function generationData() {
     for (var y2 = 0; y2 < map.length; y2++) {
         life_map[y2] = [];
         for (var x2 = 0; x2 < map[y2].length; x2++) {
-
             if (tempMap[y2][x2] && map[y2][x2]) {
                 tempMap[y2][x2] += 1;
             }
@@ -149,11 +147,9 @@ function generationData() {
             if (map[y2][x2] != tempMap[y2][x2]) {
                 map[y2][x2] = tempMap[y2][x2];
             }
-
             if (map[y2][x2]) {
                 life_map[y2].push({x_position: x2, age: map[y2][x2]})
             }
-
             if (map[y2][x2] > 3100) {
                 newLife({x: x2, y: y2});
             }
@@ -163,9 +159,6 @@ function generationData() {
 }
 
 onmessage = function(event) {
-//    if (typeof event.data !== 'object' && event.data.type) {
-//        return false;
-//    }
     switch (event.data.type) {
         case 'initial':
             postMessage({

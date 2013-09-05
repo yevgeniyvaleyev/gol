@@ -3,7 +3,7 @@
  * @author Yevgeniy Valeyev
  */
 
-var gol = function() {
+var gol = function () {
     var paused  = true,
         game_id = '#gol',
         delay   = 0,
@@ -13,14 +13,26 @@ var gol = function() {
         worker_src = 'js/gol.worker.js',
         old_life_collection = [],
         worker = null,
-        worker_callbacks = [];
+        worker_callbacks = [],
+        color = {
+            visited: '#031405',
+            old_age_1: '#fca1a1',
+            old_age_2: '#fc6464',
+            critical: {
+                state_1: 'red',
+                state_2: 'white'
+            }
+        },
+        delay_button = '#delay',
+        run_button = '.run',
+        reload_button = '.reload'
 
     /**
      * Inits the game.
      * @access public
      * @return null
      */
-    this.init = function() {
+    this.init = function () {
         $(window).resize(function () {
             initBoard(run);
         })
@@ -58,9 +70,9 @@ var gol = function() {
     var initDelayControl = function () {
         for (var d = 0; d <= 1000; d += 100) {
             var sel = (delay == d) ? 'selected="selected"' : '';
-            $('#delay', game_id).append('<option value="' + d + '" ' + sel + '>' + d + '</option>');
+            $(delay_button, game_id).append('<option value="' + d + '" ' + sel + '>' + d + '</option>');
         };
-        $('#delay', game_id).bind('change', function(){
+        $(delay_button, game_id).bind('change', function () {
             delay = $(this).val();
         });
     };
@@ -71,8 +83,8 @@ var gol = function() {
      * @return null
      */
     var initActions = function () {
-        $('.run', game_id).bind('click', run);
-        $('.reload', game_id).bind('click', initBoard);
+        $(run_button, game_id).bind('click', run);
+        $(reload_button, game_id).bind('click', initBoard);
         $(canvas).bind('click', addLife);
         initDelayControl();
     };
@@ -89,26 +101,50 @@ var gol = function() {
     }
 
     /**
+     * Iterates 2D collection
+     * @param collection
+     * @param callback
+     */
+    var iterateCollection = function (collection, callback) {
+        collection.forEach(function (items_list, items_list_key) {
+            items_list.forEach(function (item, item_key) {
+                if (callback) {
+                    callback({
+                        items_list_key: items_list_key,
+                        item_key: item_key,
+                        item: item
+                    });
+                }
+            });
+        });
+    }
+
+    /**
+     * Draws a cell
+     * @param x
+     * @param y
+     * @param color
+     */
+    var drawCell = function (x, y, radius, color) {
+        var x0 = x * cell_size + cell_size / 2,
+            y0 = y * cell_size + cell_size / 2;
+
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.arc(x0, y0, radius, 0, Math.PI * 2, true);
+        ctx.fill();
+    }
+
+    /**
      * Creates lived cells
      * @param life_collection
      */
-    var createLivedCell = function (life_collection) {
-        if (old_life_collection) {
-            for (var y = 0; y < life_collection.length; y++) {
-                var _tmpRowLength = life_collection[y].length;
-                for (var i = 0; i < _tmpRowLength; i++) {
-                    var x = life_collection[y][i].x_position,
-                        life_color = '#031405';
-                    ctx.beginPath();
-                    var x0 = x * cell_size + cell_size/2,
-                        y0 = y * cell_size + cell_size/2;
+    var drawLivedCells = function (life_collection) {
+        var radius = (cell_size / 2) * 1.1;
 
-                    ctx.fillStyle = life_color;
-                    ctx.arc(x0, y0, (cell_size/2)*1.1, 0, Math.PI * 2, true);
-                    ctx.fill();
-                }
-            }
-        }
+        iterateCollection(old_life_collection, function (data) {
+            drawCell(data.item.x_position, data.items_list_key, radius, color.visited);
+        });
         old_life_collection = life_collection;
     }
 
@@ -117,18 +153,18 @@ var gol = function() {
      * @param age
      * @returns {string}
      */
-    function getColor(age) {
+    var getColor = function (age) {
         var age_1_hue = (age <= 250) ? age : 250,
             age_2_hue = (age > 250 && age <= 500) ? age - 250 : 0;
 
         if (age > 3000) {
-            return age%2?'red':'white';
+            return (age % 2) ? color.critical.state_1 : color.critical.state_2;
         }
         if (age > 2000) {
-            return '#fc6464'
+            return color.old_age_2;
         }
         if (age > 1000) {
-            return '#fca1a1'
+            return color.old_age_1;
         }
         if (age > 500) {
             age_2_hue = 250;
@@ -141,28 +177,12 @@ var gol = function() {
      * @param map
      */
     var drawLife = function (life_collection) {
+        var radius = cell_size / 3;
 
-        createLivedCell(life_collection);
-
-        for (var y = 0; y < life_collection.length; y++) {
-            var _tmpRowLength = life_collection[y].length;
-            for (var i = 0; i < _tmpRowLength; i++) {
-                var x = life_collection[y][i].x_position,
-                    age = life_collection[y][i].age,
-                    life_color = getColor(age),
-                    radius = cell_size/3;
-
-                ctx.save();
-                ctx.beginPath();
-                var x0 = x * cell_size + cell_size/2,
-                    y0 = y * cell_size + cell_size/2;
-
-                ctx.fillStyle = life_color;
-                ctx.arc(x0, y0, radius, 0, Math.PI * 2, true);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
+        drawLivedCells(life_collection);
+        iterateCollection(life_collection, function (data) {
+            drawCell(data.item.x_position, data.items_list_key, radius, getColor(data.item.age));
+        });
     }
 
     /**
@@ -196,10 +216,10 @@ var gol = function() {
      * @access private
      * @return null
      */
-    var initBoard = function(callback) {
+    var initBoard = function (callback) {
         var params = {
-            x: parseInt(window.innerWidth/cell_size),
-            y: parseInt(window.innerHeight/cell_size)
+            x: parseInt(window.innerWidth / cell_size),
+            y: parseInt(window.innerHeight / cell_size)
         }
         generateData('initial', params, function (data) {
             initShape(data.cols, data.rows);
@@ -207,7 +227,7 @@ var gol = function() {
             if (callback) {
                 callback();
             }
-        })
+        });
     }
 
     /**
@@ -216,10 +236,10 @@ var gol = function() {
      * @return null
      */
     var generation = function (callback) {
-        generateData('generation', {}, function(data) {
+        generateData('generation', {}, function (data) {
             drawLife(data);
             callback();
-        })
+        });
     };
 
     /**
@@ -227,12 +247,12 @@ var gol = function() {
      * @access private
      * @return null
      */
-    var run = function(event) {
+    var run = function (event) {
         var self = this;
         if (event) {
             paused = !paused;
         }
-        generation(function(){
+        generation(function () {
             if (!paused) {
                 $(self).val('stop');
                 setTimeout(run, delay);
@@ -248,6 +268,6 @@ var gol = function() {
 };
 
 // Inits the game on load        
-$(function() {
+$(function () {
     gol().init();
 });
