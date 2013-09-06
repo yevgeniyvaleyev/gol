@@ -130,9 +130,11 @@ var gol = function () {
             y0 = y * cell_size + cell_size / 2;
 
         ctx.beginPath();
+        ctx.save();
         ctx.fillStyle = color;
         ctx.arc(x0, y0, radius, 0, Math.PI * 2, true);
         ctx.fill();
+        ctx.restore();
     }
 
     /**
